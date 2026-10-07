@@ -168,3 +168,7 @@ sh helper/build.sh
 ```
 
 欢迎提 issue 和 pull request。
+
+## 许可证
+
+[MIT](LICENSE)
