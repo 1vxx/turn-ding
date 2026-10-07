@@ -18,10 +18,11 @@ macOS only.
 | --- | --- |
 | Claude finished its answer | Three rings of *Glass* |
 | The turn stopped on an error | Three rings of *Basso* |
+| Claude stopped to ask you something: a question with options, or permission to run a tool | One ring of *Ping* |
 | You interrupted Claude | Nothing |
 | A subagent finished | Nothing. Only the main turn rings |
 
-The two sounds are different on purpose: you can tell from across the room whether to come back and read the answer or come back and fix something.
+The three sounds are different on purpose: you can tell from across the room whether to come back and read the answer, fix something, or just click a button.
 
 ## Install
 
@@ -95,12 +96,13 @@ Installed this way, Claude Code reads the plugin straight from `~/turn-ding`. Ed
 
 | Value | Default | What it does |
 | --- | --- | --- |
-| `REPEAT` | `3` | How many times it rings |
+| `REPEAT` | `3` | How many times it rings when a turn ends |
+| `ASK_REPEAT` | `1` | How many times it rings when Claude stops to ask |
 | `RING_SECONDS` | `0.5` | How long each ring lasts, in seconds |
 | `DUCK_GAIN` | `0.4` | How loud other apps stay while it rings. `0` is silent, `1` leaves them alone |
 | `FALLBACK_VOLUME` | `4` | How much the sound is amplified when other audio can't be turned down. `1` is the sound's own level |
 
-To pick different sounds, replace `Glass` and `Basso` in the same file with any name from `/System/Library/Sounds`. To hear what is available:
+To pick different sounds, replace `Glass`, `Basso` and `Ping` in the same file with any name from `/System/Library/Sounds`. To hear what is available:
 
 ```bash
 ls /System/Library/Sounds
@@ -122,7 +124,7 @@ The helper that turns other audio down didn't run, so turn-ding fell back to pla
 The ring follows your system volume. To change how much other apps are turned down, adjust `DUCK_GAIN`.
 
 **Does it ring for every subagent?**
-No. Only the main conversation rings, so a task that fans out into ten subagents rings once, at the end.
+Not when they finish. Only the main conversation rings at the end of a turn, so a task that fans out into ten subagents rings once, at the end. A subagent that stops to ask you something does ring, because it is waiting on you.
 
 **Will my music stay quiet if something goes wrong?**
 No. The helper restores the volume when it finishes, and also if it is killed partway through.
