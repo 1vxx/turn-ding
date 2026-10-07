@@ -5,7 +5,7 @@
     {
       "name": "turn-ding",
       "source": "./",
-      "description": "Plays a sound when Claude finishes a turn"
+      "description": "Plays a sound when Claude Code or Codex finishes a turn"
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "description": "Sound notifications for local Codex sessions on macOS.",
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "(^|__)(request_user_input|request_user_input_async|AskUserQuestion)$", "hooks": [{ "type": "command", "command": "python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ],
+    "PermissionRequest": [
+      { "hooks": [{ "type": "command", "command": "python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ],
+    "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "[ -n \"$PLUGIN_DATA\" ] && [ ! -d \"$PLUGIN_DATA/codex/waiting\" ] && exit 0; exec python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ],
+    "Interrupt": [
+      { "hooks": [{ "type": "command", "command": "python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "command": "python3 \"${PLUGIN_ROOT}/hooks/codex.py\"", "timeout": 3 }] }
+    ]
+  }
+}

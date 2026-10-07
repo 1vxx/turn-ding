@@ -17,6 +17,7 @@ import AVFoundation
 import AppKit
 import CoreAudio
 import Foundation
+import IOKit
 
 @_silgen_name("AudioDeviceDuck")
 func AudioDeviceDuck(_ device: AudioDeviceID, _ level: Float32,
@@ -56,10 +57,22 @@ func isHostFrontmost() -> Bool {
     return terminals.contains(front.bundleIdentifier ?? "")
 }
 
+// Seconds since the last key or pointer input. The HID system's own counter
+// answers in about a millisecond; asking the window server takes some forty,
+// so it is only asked when the counter is not there
+func idleSeconds() -> Double {
+    let hid = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOHIDSystem"))
+    if hid != 0 {
+        defer { IOObjectRelease(hid) }
+        let value = IORegistryEntryCreateCFProperty(hid, "HIDIdleTime" as CFString, kCFAllocatorDefault, 0)
+        if let nanoseconds = value?.takeRetainedValue() as? UInt64 { return Double(nanoseconds) / 1e9 }
+    }
+    return CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+}
+
 let args = CommandLine.arguments
 if args.count == 2, args[1] == "state" {
-    let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState,
-                                                       eventType: CGEventType(rawValue: ~0)!)
+    let idle = idleSeconds()
     let session = CGSessionCopyCurrentDictionary() as? [String: Any]
     let isLocked = session?["CGSSessionScreenIsLocked"] as? Bool ?? false
     print("\(Int(idle)) \(isLocked ? 1 : 0) \(isHostFrontmost() ? 1 : 0)")

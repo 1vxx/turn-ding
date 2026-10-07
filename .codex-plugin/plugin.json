@@ -1,0 +1,12 @@
+{
+  "name": "turn-ding",
+  "version": "0.3.0",
+  "description": "Plays a sound when Codex finishes a turn or waits for you",
+  "author": { "name": "1v" },
+  "license": "MIT",
+  "interface": {
+    "logo": "./assets/icon.svg",
+    "composerIcon": "./assets/icon.svg"
+  },
+  "hooks": "./hooks/codex.json"
+}
