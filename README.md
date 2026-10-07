@@ -26,13 +26,13 @@ You need macOS and a recent version of [Claude Code](https://claude.com/claude-c
 **1. Get the plugin**
 
 ```bash
-git clone https://github.com/1vxx/turnding.git ~/turnding
+git clone https://github.com/1vxx/turn-ding.git ~/turn-ding
 ```
 
 **2. Try it for one session**
 
 ```bash
-claude --plugin-dir ~/turnding
+claude --plugin-dir ~/turn-ding
 ```
 
 Ask Claude anything. When it finishes answering, you should hear three rings.
@@ -44,7 +44,7 @@ Add the folder to the `env` block of `~/.claude/settings.json`:
 ```json
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/turnding"
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/turn-ding"
   }
 }
 ```
@@ -56,7 +56,7 @@ This also covers sessions started from the Claude desktop app, where there is no
 The bundled helper is built for Apple Silicon. On an Intel Mac, rebuild it once (this needs the Xcode Command Line Tools):
 
 ```bash
-sh ~/turnding/helper/build.sh
+sh ~/turn-ding/helper/build.sh
 ```
 
 If you skip this, turn-ding still rings. It just can't turn other audio down, so it plays the sound louder instead.
@@ -85,10 +85,10 @@ afplay /System/Library/Sounds/Hero.aiff
 ## Questions
 
 **I don't hear anything.**
-Check that your Mac isn't muted and that the right output device is selected. Then check that the plugin is loaded: start Claude with `claude --plugin-dir ~/turnding` and ask it something short. If turn-ding can't play at all, it shows a message in Claude Code that starts with `turn-ding:` and says why.
+Check that your Mac isn't muted and that the right output device is selected. Then check that the plugin is loaded: start Claude with `claude --plugin-dir ~/turn-ding` and ask it something short. If turn-ding can't play at all, it shows a message in Claude Code that starts with `turn-ding:` and says why.
 
 **It rings, but my music doesn't get quieter.**
-The helper that turns other audio down didn't run, so turn-ding fell back to plain playback. Rebuild it with `sh ~/turnding/helper/build.sh`.
+The helper that turns other audio down didn't run, so turn-ding fell back to plain playback. Rebuild it with `sh ~/turn-ding/helper/build.sh`.
 
 **It's too loud / too quiet.**
 The ring follows your system volume. To change how much other apps are turned down, adjust `DUCK_GAIN`.

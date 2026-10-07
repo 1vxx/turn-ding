@@ -26,13 +26,13 @@
 **1. 下载插件**
 
 ```bash
-git clone https://github.com/1vxx/turnding.git ~/turnding
+git clone https://github.com/1vxx/turn-ding.git ~/turn-ding
 ```
 
 **2. 先试用一次**
 
 ```bash
-claude --plugin-dir ~/turnding
+claude --plugin-dir ~/turn-ding
 ```
 
 随便问 Claude 一句话，它回答完时你应该能听到三声提示音。
@@ -44,7 +44,7 @@ claude --plugin-dir ~/turnding
 ```json
 {
   "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/turnding"
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/turn-ding"
   }
 }
 ```
@@ -56,7 +56,7 @@ claude --plugin-dir ~/turnding
 仓库自带的助手程序是为 Apple Silicon 编译的。Intel Mac 需要重新编译一次（需要先装 Xcode 命令行工具）：
 
 ```bash
-sh ~/turnding/helper/build.sh
+sh ~/turn-ding/helper/build.sh
 ```
 
 不编译也能响，只是没法调低其他声音，会改为把提示音本身放大。
@@ -85,10 +85,10 @@ afplay /System/Library/Sounds/Hero.aiff
 ## 常见问题
 
 **什么都听不到。**
-先确认 Mac 没有静音，输出设备选对了。再确认插件已加载：用 `claude --plugin-dir ~/turnding` 启动，问一个简短的问题。如果 turn-ding 完全无法播放，它会在 Claude Code 里显示一条以 `turn-ding:` 开头的提示，说明原因。
+先确认 Mac 没有静音，输出设备选对了。再确认插件已加载：用 `claude --plugin-dir ~/turn-ding` 启动，问一个简短的问题。如果 turn-ding 完全无法播放，它会在 Claude Code 里显示一条以 `turn-ding:` 开头的提示，说明原因。
 
 **会响，但我的音乐没有变小。**
-负责调低其他声音的助手程序没跑起来，turn-ding 退回了普通播放。用 `sh ~/turnding/helper/build.sh` 重新编译即可。
+负责调低其他声音的助手程序没跑起来，turn-ding 退回了普通播放。用 `sh ~/turn-ding/helper/build.sh` 重新编译即可。
 
 **太响了 / 太轻了。**
 提示音跟随系统音量。想改变其他应用被调低的程度，调整 `DUCK_GAIN`。
