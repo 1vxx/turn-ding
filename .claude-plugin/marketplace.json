@@ -1,0 +1,11 @@
+{
+  "name": "turn-ding",
+  "owner": { "name": "1v" },
+  "plugins": [
+    {
+      "name": "turn-ding",
+      "source": "./",
+      "description": "Plays a sound when Claude finishes a turn"
+    }
+  ]
+}

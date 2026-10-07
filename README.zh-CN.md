@@ -23,47 +23,71 @@
 
 需要 macOS 和较新版本的 [Claude Code](https://claude.com/claude-code)。
 
-**1. 下载插件**
+```bash
+claude plugin marketplace add 1vxx/turn-ding
+```
+
+```bash
+claude plugin install turn-ding@turn-ding
+```
+
+这样就装好了。新开一个 Claude Code 会话，随便问一句话，回答完时你应该能听到三声提示音。之后每个会话都生效，终端和桌面应用都一样。
+
+以后更新：
+
+```bash
+claude plugin update turn-ding@turn-ding
+```
+
+卸载：
+
+```bash
+claude plugin uninstall turn-ding@turn-ding
+```
+
+### 只想先试试？
+
+克隆下来，只在一次会话里加载，什么都不安装：
 
 ```bash
 git clone https://github.com/1vxx/turn-ding.git ~/turn-ding
 ```
 
-**2. 先试用一次**
-
 ```bash
 claude --plugin-dir ~/turn-ding
 ```
 
-随便问 Claude 一句话，它回答完时你应该能听到三声提示音。
-
-**3. 让每次会话都生效**
-
-把插件目录写进 `~/.claude/settings.json` 的 `env` 里：
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/turn-ding"
-  }
-}
-```
-
-这样从 Claude 桌面应用启动的会话也会生效，那里没有命令行可以加参数。
-
 ### Intel 芯片的 Mac
 
-仓库自带的助手程序是为 Apple Silicon 编译的。Intel Mac 需要重新编译一次（需要先装 Xcode 命令行工具）：
+仓库自带的助手程序是为 Apple Silicon 编译的。没有它 turn-ding 也能响，只是没法调低其他声音，会改为把提示音本身放大。想要完整效果，就从自己的副本安装并在那里编译助手程序（需要先装 Xcode 命令行工具），见[从自己的副本安装](#从自己的副本安装)。
+
+## 按自己的喜好调整
+
+没有配置文件。可调的值写在 [hooks/register.ts](hooks/register.ts) 的最上面，所以要改它们，需要从你自己的仓库副本安装。
+
+### 从自己的副本安装
+
+```bash
+git clone https://github.com/1vxx/turn-ding.git ~/turn-ding
+```
 
 ```bash
 sh ~/turn-ding/helper/build.sh
 ```
 
-不编译也能响，只是没法调低其他声音，会改为把提示音本身放大。
+```bash
+claude plugin marketplace add ~/turn-ding
+```
 
-## 按自己的喜好调整
+```bash
+claude plugin install turn-ding@turn-ding
+```
 
-没有配置文件。打开 [hooks/register.ts](hooks/register.ts)，改最上面的几个值：
+编译这一步只在 Intel Mac 上、或者改了 Swift 源码之后才需要。如果之前已经从 GitHub 安装过，先运行 `claude plugin uninstall turn-ding@turn-ding` 和 `claude plugin marketplace remove turn-ding`。
+
+这样安装后，Claude Code 直接读取 `~/turn-ding` 这个目录。改完文件，在会话里运行 `/reload-plugins`，改动就生效了。
+
+### 可以改什么
 
 | 值 | 默认 | 作用 |
 | --- | --- | --- |
@@ -85,10 +109,10 @@ afplay /System/Library/Sounds/Hero.aiff
 ## 常见问题
 
 **什么都听不到。**
-先确认 Mac 没有静音，输出设备选对了。再确认插件已加载：用 `claude --plugin-dir ~/turn-ding` 启动，问一个简短的问题。如果 turn-ding 完全无法播放，它会在 Claude Code 里显示一条以 `turn-ding:` 开头的提示，说明原因。
+先确认 Mac 没有静音，输出设备选对了。再用 `claude plugin list` 确认插件已安装并启用，然后新开一个会话。如果 turn-ding 完全无法播放，它会在 Claude Code 里显示一条以 `turn-ding:` 开头的提示，说明原因。
 
 **会响，但我的音乐没有变小。**
-负责调低其他声音的助手程序没跑起来，turn-ding 退回了普通播放。用 `sh ~/turn-ding/helper/build.sh` 重新编译即可。
+负责调低其他声音的助手程序没跑起来，turn-ding 退回了普通播放。在 Intel Mac 上这是预期行为，按[从自己的副本安装](#从自己的副本安装)编译一次即可。
 
 **太响了 / 太轻了。**
 提示音跟随系统音量。想改变其他应用被调低的程度，调整 `DUCK_GAIN`。
@@ -112,6 +136,7 @@ turn-ding 监听 Claude Code 的 `turn.complete` 事件。主对话的一轮结�
 
 ```
 .claude-plugin/plugin.json   插件清单
+.claude-plugin/marketplace.json   让 `claude plugin install` 能找到它
 hooks/hooks.json             声明 hooks 模块
 hooks/register.ts            插件本体
 hooks/register.test.ts       测试

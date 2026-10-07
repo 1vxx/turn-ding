@@ -23,47 +23,71 @@ The two sounds are different on purpose: you can tell from across the room wheth
 
 You need macOS and a recent version of [Claude Code](https://claude.com/claude-code).
 
-**1. Get the plugin**
+```bash
+claude plugin marketplace add 1vxx/turn-ding
+```
+
+```bash
+claude plugin install turn-ding@turn-ding
+```
+
+That's it. Start a new Claude Code session, ask anything, and you should hear three rings when the answer is done. It stays on for every session, in the terminal and in the desktop app.
+
+To update later:
+
+```bash
+claude plugin update turn-ding@turn-ding
+```
+
+To remove it:
+
+```bash
+claude plugin uninstall turn-ding@turn-ding
+```
+
+### Just want to try it first?
+
+Clone it and load it for a single session, with nothing installed:
 
 ```bash
 git clone https://github.com/1vxx/turn-ding.git ~/turn-ding
 ```
 
-**2. Try it for one session**
-
 ```bash
 claude --plugin-dir ~/turn-ding
 ```
 
-Ask Claude anything. When it finishes answering, you should hear three rings.
-
-**3. Keep it on for every session**
-
-Add the folder to the `env` block of `~/.claude/settings.json`:
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/turn-ding"
-  }
-}
-```
-
-This also covers sessions started from the Claude desktop app, where there is no command line to add a flag to.
-
 ### On an Intel Mac
 
-The bundled helper is built for Apple Silicon. On an Intel Mac, rebuild it once (this needs the Xcode Command Line Tools):
+The bundled helper is built for Apple Silicon. Without it turn-ding still rings, but it can't turn other audio down, so it plays the sound louder instead. To get the full effect, install from your own copy and build the helper there (this needs the Xcode Command Line Tools); see [Install from your own copy](#install-from-your-own-copy).
+
+## Make it yours
+
+There is no settings file. The values live at the top of [hooks/register.ts](hooks/register.ts), so to change them you install from your own copy of the repo.
+
+### Install from your own copy
+
+```bash
+git clone https://github.com/1vxx/turn-ding.git ~/turn-ding
+```
 
 ```bash
 sh ~/turn-ding/helper/build.sh
 ```
 
-If you skip this, turn-ding still rings. It just can't turn other audio down, so it plays the sound louder instead.
+```bash
+claude plugin marketplace add ~/turn-ding
+```
 
-## Make it yours
+```bash
+claude plugin install turn-ding@turn-ding
+```
 
-There is no settings file. Open [hooks/register.ts](hooks/register.ts) and change the values at the top:
+The build step is only needed on an Intel Mac or after you change the Swift source. If you already installed from GitHub, run `claude plugin uninstall turn-ding@turn-ding` and `claude plugin marketplace remove turn-ding` first.
+
+Installed this way, Claude Code reads the plugin straight from `~/turn-ding`. Edit a file, run `/reload-plugins` in your session, and the change is live.
+
+### What you can change
 
 | Value | Default | What it does |
 | --- | --- | --- |
@@ -85,10 +109,10 @@ afplay /System/Library/Sounds/Hero.aiff
 ## Questions
 
 **I don't hear anything.**
-Check that your Mac isn't muted and that the right output device is selected. Then check that the plugin is loaded: start Claude with `claude --plugin-dir ~/turn-ding` and ask it something short. If turn-ding can't play at all, it shows a message in Claude Code that starts with `turn-ding:` and says why.
+Check that your Mac isn't muted and that the right output device is selected. Then check that the plugin is installed and enabled with `claude plugin list`, and start a new session. If turn-ding can't play at all, it shows a message in Claude Code that starts with `turn-ding:` and says why.
 
 **It rings, but my music doesn't get quieter.**
-The helper that turns other audio down didn't run, so turn-ding fell back to plain playback. Rebuild it with `sh ~/turn-ding/helper/build.sh`.
+The helper that turns other audio down didn't run, so turn-ding fell back to plain playback. This is expected on an Intel Mac; see [Install from your own copy](#install-from-your-own-copy) to build it.
 
 **It's too loud / too quiet.**
 The ring follows your system volume. To change how much other apps are turned down, adjust `DUCK_GAIN`.
@@ -112,6 +136,7 @@ The mixer call it uses, `AudioDeviceDuck`, is exported by CoreAudio but is not i
 
 ```
 .claude-plugin/plugin.json   plugin manifest
+.claude-plugin/marketplace.json   lets `claude plugin install` find it
 hooks/hooks.json             names the hooks module
 hooks/register.ts            the plugin
 hooks/register.test.ts       tests
