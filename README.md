@@ -1,6 +1,10 @@
-# turn-ding 🔔
+<p align="center">
+  <img src="assets/icon.svg" width="96" height="96" alt="turn-ding">
+</p>
 
-**English** · [简体中文](README.zh-CN.md)
+<h1 align="center">turn-ding</h1>
+
+<p align="center"><b>English</b> · <a href="README.zh-CN.md">简体中文</a></p>
 
 A Claude Code plugin that rings when Claude finishes a turn, so you can look away while it works.
 

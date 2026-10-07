@@ -1,6 +1,10 @@
-# turn-ding 🔔
+<p align="center">
+  <img src="assets/icon.svg" width="96" height="96" alt="turn-ding">
+</p>
 
-[English](README.md) · **简体中文**
+<h1 align="center">turn-ding</h1>
+
+<p align="center"><a href="README.md">English</a> · <b>简体中文</b></p>
 
 一个 Claude Code 插件：Claude 干完活就响一声，你可以放心去做别的事。
 
