@@ -19,6 +19,7 @@ macOS only.
 | Claude Code or Codex finished its answer | Three rings of *Glass* |
 | A Claude Code turn stopped on an error | Three rings of *Basso* |
 | The agent stopped to ask you something: a question with options, or permission to run a tool | One ring of *Ping* |
+| Codex's auto-review approves a command for you | Nothing. It asks nothing of you |
 | You interrupted the agent | Nothing |
 | A subagent finished | Nothing. Only the main turn rings |
 
@@ -177,7 +178,7 @@ Not today. It relies on macOS system sounds and macOS audio APIs.
 
 turn-ding listens for Claude Code's `turn.complete` event. When the main turn ends, it runs a small Swift helper ([helper/turn-ding.swift](helper/turn-ding.swift)) that asks the macOS audio mixer to turn every other app down, plays the sound, and turns them back up. Other apps' audio is only scaled, never paused, so the dip is smooth.
 
-Codex loads a separate native manifest and [command hook configuration](hooks/codex.json). `Stop` rings for the main turn, `PreToolUse` rings for question tools, and `PermissionRequest` rings for approvals. `UserPromptSubmit`, `PostToolUse`, `Interrupt`, and `SessionEnd` cancel reminders when work resumes or ends. The Python adapter launches a bounded playback worker using the same Swift helper; hooks return JSON without changing tool permissions. Session timing and cancellation tokens live outside the repository; no prompts or transcripts are stored.
+Codex loads a separate native manifest and [command hook configuration](hooks/codex.json). `Stop` rings for the main turn, `PreToolUse` rings for question tools, and `PermissionRequest` rings for approvals, except those Codex's auto-review answers: the hook reads the latest turn-settings line of the session's rollout, from the file's end and once a turn, and keeps only whether auto-review is on. `UserPromptSubmit`, `PostToolUse`, `Interrupt`, and `SessionEnd` cancel reminders when work resumes or ends. The Python adapter launches a bounded playback worker using the same Swift helper; hooks return JSON without changing tool permissions. Session timing and cancellation tokens live outside the repository; no prompts or transcripts are stored.
 
 The mixer call it uses, `AudioDeviceDuck`, is exported by CoreAudio but is not in a public header, so a future macOS release could change it. If it ever fails, turn-ding falls back to `afplay` and plays the sound louder instead. You still get your ring.
 

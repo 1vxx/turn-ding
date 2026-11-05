@@ -30,6 +30,14 @@ HELPER = os.path.join(ROOT, "bin", "turn-ding")
 QUESTIONS = {"request_user_input", "request_user_input_async", "AskUserQuestion"}
 EVENTS = {"UserPromptSubmit", "Stop", "PreToolUse", "PermissionRequest",
           "PostToolUse", "Interrupt", "SessionEnd"}
+# Codex asks PermissionRequest about a command also when its auto-review, not
+# the person, will answer. Which one does is in the rollout's latest turn
+# settings line; only that line is parsed, found from the file's end, and only
+# yes or no is kept. guardian_subagent is auto-review's earlier name.
+TURN_SETTINGS = b'"type":"turn_context"'
+AUTO_REVIEWERS = {"auto_review", "guardian_subagent"}
+SCAN_BLOCK = 64 * 1024
+SCAN_LIMIT = 8 * 1024 * 1024
 # Reminders last five minutes, so a waiting marker older than this is left
 # over from a session that died; state files are kept much longer.
 STALE_WAITING_SECONDS = 600
@@ -39,6 +47,51 @@ MAX_LOG_BYTES = 64 * 1024
 
 def is_question(tool: str) -> bool:
     return tool.rsplit("__", 1)[-1] in QUESTIONS
+
+
+def turn_settings(rollout: str) -> dict:
+    """The latest turn_context payload of a Codex rollout, read backwards from its end."""
+    with open(rollout, "rb") as file:
+        position = file.seek(0, os.SEEK_END)
+        floor = max(0, position - SCAN_LIMIT)
+        head = b""
+        while position > floor:
+            size = min(SCAN_BLOCK, position - floor)
+            position -= size
+            file.seek(position)
+            text = file.read(size) + head
+            # Whole lines only: those past the first newline, unless this is the file's start.
+            start = 0 if position == 0 else text.find(b"\n") + 1
+            if start == 0 and position > 0:
+                head = text
+                continue
+            for line in reversed(text[start:].split(b"\n")):
+                if TURN_SETTINGS not in line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except ValueError:
+                    continue  # Still being written, or the words inside something else.
+                if isinstance(record, dict) and record.get("type") == "turn_context":
+                    payload = record.get("payload")
+                    return payload if isinstance(payload, dict) else {}
+            head = text[:start]
+    return {}
+
+
+def auto_reviewed(event: dict, state: dict) -> bool:
+    """Whether Codex's auto-review, not the person, answers this turn's approvals."""
+    turn = event.get("turn_id")
+    known = state.get("auto_review")
+    if turn and isinstance(known, list) and len(known) == 2 and known[0] == turn:
+        return known[1] is True
+    rollout = event.get("transcript_path")
+    if not isinstance(rollout, str) or not rollout:
+        return False
+    try:
+        return turn_settings(rollout).get("approvals_reviewer") in AUTO_REVIEWERS
+    except OSError:
+        return False  # Unknown: ring, as for any approval.
 
 
 def where() -> tuple[float, str]:
@@ -189,7 +242,7 @@ def play(path: str, token: str, sound: str, repeat: int, gain: str, away: bool) 
         ring(sound, 1, AWAY_DUCK_GAIN)
 
 
-def update(path: str, name: str, turn: object, tool: str, is_subagent: bool):
+def update(path: str, name: str, turn: object, tool: str, is_subagent: bool, reviewed: bool = False):
     """Records the event; returns (token, sound, repeat, turn ms) when it should ring."""
     state = read_state(path)
     if name == "SessionEnd":
@@ -225,6 +278,13 @@ def update(path: str, name: str, turn: object, tool: str, is_subagent: bool):
         return None
     if name == "PermissionRequest" and is_question(tool):
         return None  # PreToolUse already rings for this question.
+    if name == "PermissionRequest":
+        if turn and state.get("auto_review") != [turn, reviewed]:
+            state["auto_review"] = [turn, reviewed]  # So the rollout is read once a turn.
+            if reviewed:
+                write_state(path, state)
+        if reviewed:
+            return None  # Codex's auto-review answers it; nothing is asked of the person.
     stop_waiting(path, state)
     if name == "Stop":
         # Stop is a root event; SubagentStop is intentionally not registered.
@@ -259,12 +319,14 @@ def handle(event: dict) -> None:
     if not isinstance(session, str) or not session or not isinstance(tool, str):
         return
     path = state_path(session)
+    # Read before the lock, as where the person is: state files are replaced whole.
+    reviewed = name == "PermissionRequest" and not is_question(tool) and auto_reviewed(event, read_state(path))
     # One lock for every session: it is held only for the short state update,
     # never while asking where the person is or while a sound plays.
     lock = os.open(os.path.join(os.path.dirname(path), "lock"), os.O_CREAT | os.O_RDWR, 0o600)
     try:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        notification = update(path, name, event.get("turn_id"), tool, bool(event.get("agent_id")))
+        notification = update(path, name, event.get("turn_id"), tool, bool(event.get("agent_id")), reviewed)
     finally:
         os.close(lock)
     if notification is None:

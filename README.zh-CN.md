@@ -19,6 +19,7 @@
 | Claude Code 或 Codex 回答完了 | *Glass* 响三下 |
 | Claude Code 这一轮因为出错而中断 | *Basso* 响三下 |
 | 代理停下来等你：弹出选项让你选，或者请求运行某个工具的权限 | *Ping* 响一下 |
+| Codex 的自动审查替你批准了一条命令 | 不响，不需要你处理 |
 | 你自己打断了代理 | 不响 |
 | 子代理（subagent）完成 | 不响，只有主对话会响 |
 
@@ -177,7 +178,7 @@ Codex 中用 `codex plugin list --marketplace turn-ding --json` 检查插件，�
 
 turn-ding 监听 Claude Code 的 `turn.complete` 事件。主对话的一轮结束时，它运行一个 Swift 小程序（[helper/turn-ding.swift](helper/turn-ding.swift)），请 macOS 的混音器把其他所有应用的音量调低，播放提示音，再调回去。其他应用的声音只是被按比例缩小，不会被暂停，所以起伏很平滑。
 
-Codex 使用独立的原生插件清单和[命令 hook 配置](hooks/codex.json)。`Stop` 负责主对话完成提示，`PreToolUse` 负责提问提示，`PermissionRequest` 负责审批提示。`UserPromptSubmit`、`PostToolUse`、`Interrupt` 和 `SessionEnd` 在工作恢复或结束时取消重复提醒。Python 接入层启动有次数限制的后台播放进程，调用同一个 Swift 助手；hooks 返回 JSON，不改变工具权限。会话计时和取消标记保存在仓库外，不保存提问或对话记录。
+Codex 使用独立的原生插件清单和[命令 hook 配置](hooks/codex.json)。`Stop` 负责主对话完成提示，`PreToolUse` 负责提问提示，`PermissionRequest` 负责审批提示，但 Codex 自动审查代为批准的不响：hook 从会话 rollout 文件末尾往回找最新一轮的设置行，每轮只读一次，只保留自动审查是否开启。`UserPromptSubmit`、`PostToolUse`、`Interrupt` 和 `SessionEnd` 在工作恢复或结束时取消重复提醒。Python 接入层启动有次数限制的后台播放进程，调用同一个 Swift 助手；hooks 返回 JSON，不改变工具权限。会话计时和取消标记保存在仓库外，不保存提问或对话记录。
 
 它用到的混音器接口 `AudioDeviceDuck` 由 CoreAudio 导出，但不在公开头文件里，未来的 macOS 版本可能会改动它。一旦调用失败，turn-ding 会退回到 `afplay`，改为把提示音放大播放。提示音总归会响。
 

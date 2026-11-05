@@ -80,6 +80,63 @@ class HookTests(unittest.TestCase):
         self.event("PermissionRequest", tool_name="Bash")
         self.assertEqual(self.notification(), ("Ping", 1, "1", False))
 
+    def rollout(self, *reviewers):
+        """A rollout whose turns set these reviewers, the last one latest."""
+        path = Path(self.directory.name) / "rollout.jsonl"
+        lines = [{"type": "session_meta", "payload": {"id": "session-1"}}]
+        for reviewer in reviewers:
+            lines.append({"type": "turn_context", "payload": {"approvals_reviewer": reviewer}})
+            lines.append({"type": "response_item", "payload": {"output": "x" * 100}})
+        path.write_text("".join(json.dumps(line, separators=(",", ":")) + "\n" for line in lines))
+        return str(path)
+
+    def test_auto_review_answers_approvals_without_a_sound(self):
+        rollout = self.rollout("user", "auto_review")
+        self.event("PermissionRequest", tool_name="Bash", transcript_path=rollout)
+        self.launch.assert_not_called()
+        self.assertFalse((self.path.parent / "waiting").exists())
+        # Its earlier name says the same.
+        self.event("UserPromptSubmit", turn_id="turn-2")
+        self.event("PermissionRequest", turn_id="turn-2", tool_name="Bash",
+                   transcript_path=self.rollout("guardian_subagent"))
+        self.launch.assert_not_called()
+
+    def test_approvals_the_person_answers_still_ring(self):
+        for path in [self.rollout("auto_review", "user"), str(Path(self.directory.name) / "gone.jsonl"), None]:
+            with self.subTest(path=path):
+                self.launch.reset_mock()
+                self.event("UserPromptSubmit", turn_id=str(path))
+                self.event("PermissionRequest", turn_id=str(path), tool_name="Bash", transcript_path=path)
+                self.assertEqual(self.notification(), ("Ping", 1, "0.4", False))
+
+    def test_the_rollout_is_read_once_a_turn(self):
+        rollout = self.rollout("auto_review")
+        with patch.object(codex, "turn_settings", wraps=codex.turn_settings) as read:
+            for _ in range(3):
+                self.event("PermissionRequest", tool_name="Bash", transcript_path=rollout)
+            self.assertEqual(read.call_count, 1)
+            self.event("UserPromptSubmit", turn_id="turn-2")
+            self.event("PermissionRequest", turn_id="turn-2", tool_name="Bash", transcript_path=rollout)
+            self.assertEqual(read.call_count, 2)
+        self.launch.assert_not_called()
+
+    def test_turn_settings_are_the_latest_whole_line_from_the_end(self):
+        path = Path(self.directory.name) / "long.jsonl"
+        big = "y" * (codex.SCAN_BLOCK + 10)
+        lines = [
+            {"type": "turn_context", "payload": {"approvals_reviewer": "user"}},
+            {"type": "response_item", "payload": {"output": big}},
+            # Spans the block the scan starts in and the one before it.
+            {"type": "turn_context", "payload": {"approvals_reviewer": "auto_review", "notes": big}},
+            {"type": "response_item", "payload": {"type": "turn_context", "output": big}},
+        ]
+        text = "".join(json.dumps(line, separators=(",", ":")) + "\n" for line in lines)
+        path.write_text(text + '{"type":"turn_context","payload":{"approvals_rev')  # still being written
+        self.assertEqual(codex.turn_settings(str(path))["approvals_reviewer"], "auto_review")
+        empty = Path(self.directory.name) / "empty.jsonl"
+        empty.write_text("")
+        self.assertEqual(codex.turn_settings(str(empty)), {})
+
     def test_tool_completion_stops_waiting_reminders(self):
         self.event("PermissionRequest", tool_name="Bash")
         token = self.launch.call_args.args[1]
